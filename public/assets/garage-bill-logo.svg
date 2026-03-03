@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Garage Bill">
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#E5E700"/>
+      <stop offset="1" stop-color="#1FAE2D"/>
+    </linearGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity=".25"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" rx="28" fill="#0b0b0b"/>
+  <g filter="url(#s)">
+    <path d="M70 170V126c0-46 29-78 58-78s58 32 58 78v44" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M94 170v-46c0-31 17-52 34-52s34 21 34 52v70" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+    <path d="M118 170v-40c0-18 10-30 20-30s20 12 20 30v64" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+  </g>
+  <text x="128" y="230" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="34" text-anchor="middle" fill="#2FAE2F" letter-spacing=".5">Garage Bill</text>
+</svg>
+
