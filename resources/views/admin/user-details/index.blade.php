@@ -4,7 +4,23 @@
 
 @section('content')
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h1 class="h4 mb-0">User Details</h1>
+        <div class="d-flex flex-column gap-2">
+            <h1 class="h4 mb-0">User Details</h1>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Verification filter">
+                <a class="btn {{ ($verifiedFilter ?? 'all') === 'all' ? 'btn-success' : 'btn-outline-success' }}"
+                    href="{{ route('admin.user-details.index', ['verified' => 'all']) }}">
+                    All
+                </a>
+                <a class="btn {{ ($verifiedFilter ?? 'all') === 'verified' ? 'btn-success' : 'btn-outline-success' }}"
+                    href="{{ route('admin.user-details.index', ['verified' => 'verified']) }}">
+                    Verified
+                </a>
+                <a class="btn {{ ($verifiedFilter ?? 'all') === 'pending' ? 'btn-success' : 'btn-outline-success' }}"
+                    href="{{ route('admin.user-details.index', ['verified' => 'pending']) }}">
+                    Pending OTP
+                </a>
+            </div>
+        </div>
         <a href="{{ route('admin.user-details.create') }}" class="btn btn-sm btn-primary">
             <i class="bi bi-plus-lg me-1"></i>Add User
         </a>
@@ -21,6 +37,7 @@
                             <th>Business Name</th>
                             <th>Email</th>
                             <th>Mobile</th>
+                            <th>Verification</th>
                             <th>Status</th>
                             <th>Created Date</th>
                             <th class="pe-4 text-center">Actions</th>
@@ -35,6 +52,13 @@
                                 <td>{{ $user->email }}</td>
                                 <td class="font-monospace">{{ $user->mobile }}</td>
                                 <td>
+                                    @if ((string) $user->verified === 'true')
+                                        <span class="badge text-bg-success">verified</span>
+                                    @else
+                                        <span class="badge text-bg-warning">pending</span>
+                                    @endif
+                                </td>
+                                <td>
                                     <span class="badge {{ $user->status === 'active' ? 'text-bg-success' : 'text-bg-secondary' }}">
                                         {{ $user->status }}
                                     </span>
@@ -42,12 +66,21 @@
                                 <td class="text-muted">@dmy($user->created_on)</td>
                                 <td class="pe-4 text-center">
                                     <div class="d-inline-flex align-items-center gap-2">
-                                        <a class="action-btn action-view" href="{{ route('admin.user-details.show', $user) }}" title="View">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a class="action-btn action-edit" href="{{ route('admin.user-details.edit', $user) }}" title="Edit">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
+                                        @if ((string) $user->verified === 'true')
+                                            <a class="action-btn action-view" href="{{ route('admin.user-details.show', $user) }}" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a class="action-btn action-edit" href="{{ route('admin.user-details.edit', $user) }}" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <a class="action-btn action-edit" href="{{ route('admin.user-details.reset-password.form', $user) }}" title="Reset Password">
+                                                <i class="bi bi-key"></i>
+                                            </a>
+                                        @else
+                                            <a class="action-btn action-edit" href="{{ route('admin.user-details.verify-otp.form', $user) }}" title="Verify OTP">
+                                                <i class="bi bi-shield-check"></i>
+                                            </a>
+                                        @endif
                                         <form method="POST" action="{{ route('admin.user-details.destroy', $user) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?')">
                                             @csrf
                                             @method('DELETE')
@@ -60,7 +93,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">No users found.</td>
+                                <td colspan="9" class="text-center text-muted py-4">No users found.</td>
                             </tr>
                         @endforelse
                     </tbody>

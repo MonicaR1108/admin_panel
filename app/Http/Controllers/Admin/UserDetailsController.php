@@ -7,21 +7,32 @@ use App\Models\PublicUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Mail\UserOtpMail;
+use App\Mail\AdminUserPasswordResetMail;
 use Illuminate\Support\Carbon;
 
 class UserDetailsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $verifiedFilter = (string) $request->query('verified', 'all'); // all|verified|pending
+
+        $query = PublicUser::query();
+
+        if ($verifiedFilter === 'verified') {
+            $query->where('verified', 'true');
+        } elseif ($verifiedFilter === 'pending') {
+            $query->where(function ($q) {
+                $q->whereNull('verified')->orWhere('verified', '!=', 'true');
+            });
+        }
+
         return view('admin.user-details.index', [
-            'users' => PublicUser::query()
-                ->where('verified', 'true')
-                ->orderByDesc('ID')
-                ->paginate(20)
-                ->withQueryString(),
+            'verifiedFilter' => $verifiedFilter,
+            'users' => $query->orderByDesc('ID')->paginate(20)->withQueryString(),
         ]);
     }
 
@@ -43,6 +54,8 @@ class UserDetailsController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
+        $intendedStatus = (string) $validated['status'];
+
         $admin = Auth::guard('admin')->user();
         $adminId = (string) ($admin?->id ?? '');
         $now = now();
@@ -57,7 +70,8 @@ class UserDetailsController extends Controller
             'BusinessName' => trim($validated['business_name']),
             'username' => trim($validated['username']),
             'password' => Hash::make($validated['password']),
-            'status' => $validated['status'],
+            // Keep accounts inactive until OTP is verified.
+            'status' => 'inactive',
             // Columns required by existing `whyceffy_netautocare.users` table definition:
             'otp' => $otp,
             'otp_expiry' => $otpExpiry,
@@ -72,14 +86,23 @@ class UserDetailsController extends Controller
             'updated_by' => $adminId,
         ]);
 
+        $request->session()->put('pending_user_status.' . $user->getKey(), $intendedStatus);
+
         try {
             Mail::to($user->email)->send(new UserOtpMail($otp, $otpExpiry, $user->name));
-        } catch (\Throwable) {
+            Log::info('OTP email sent.', [
+                'to' => $user->email,
+                'user_id' => $user->getKey(),
+                'mailer' => (string) config('mail.default', ''),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
             $user->delete();
+            $request->session()->forget('pending_user_status.' . $user->getKey());
 
             return back()
                 ->withInput()
-                ->withErrors(['email' => 'Unable to send OTP email. Please configure SMTP and try again.']);
+                ->withErrors(['email' => 'Unable to send OTP email. Please check SMTP settings (Gmail requires an App Password) and try again.']);
         }
 
         return redirect()
@@ -141,10 +164,16 @@ class UserDetailsController extends Controller
         $adminId = (string) ($admin?->id ?? '');
         $now = now();
 
+        $intendedStatus = (string) $request->session()->pull('pending_user_status.' . $user->getKey(), '');
+        if (! in_array($intendedStatus, ['active', 'inactive'], true)) {
+            $intendedStatus = '';
+        }
+
         $user->update([
             'verified' => 'true',
             'otp' => null,
             'otp_expiry' => '',
+            ...( $intendedStatus !== '' ? ['status' => $intendedStatus] : [] ),
             'updated_on' => $now->format('Y-m-d H:i:s'),
             'updated_by' => $adminId,
         ]);
@@ -218,12 +247,48 @@ class UserDetailsController extends Controller
 
     public function destroy(PublicUser $user)
     {
-        if ((string) $user->verified !== 'true') {
-            return redirect()->route('admin.user-details.verify-otp.form', $user);
-        }
-
         $user->delete();
 
         return redirect()->route('admin.user-details.index')->with('status', 'User deleted.');
+    }
+
+    public function resetPasswordForm(PublicUser $user)
+    {
+        return view('admin.user-details.reset-password', [
+            'user' => $user,
+        ]);
+    }
+
+    public function resetPassword(Request $request, PublicUser $user)
+    {
+        $validated = $request->validate([
+            'mode' => ['required', 'in:auto,manual'],
+            'password' => ['required_if:mode,manual', 'nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $admin = Auth::guard('admin')->user();
+        $adminId = (string) ($admin?->id ?? '');
+        $now = now();
+
+        $newPassword = $validated['mode'] === 'manual'
+            ? (string) ($validated['password'] ?? '')
+            : Str::random(12);
+
+        $user->update([
+            'password' => Hash::make($newPassword),
+            'updated_on' => $now->format('Y-m-d H:i:s'),
+            'updated_by' => $adminId,
+        ]);
+
+        try {
+            $login = (string) ($user->username ?: $user->email);
+            Mail::to((string) $user->email)->send(new AdminUserPasswordResetMail($login, $newPassword, (string) $user->name));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['email' => 'Password updated, but the notification email could not be sent.'])->withInput();
+        }
+
+        return redirect()->route('admin.user-details.index')->with('status', 'Password reset and email sent to user.');
     }
 }

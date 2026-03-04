@@ -7,7 +7,7 @@
         <img class="topbar-logo" src="{{ asset('assets/garage-bill-logo.svg') }}" alt="Company Logo">
 
         <a class="topbar-title" href="{{ route('dashboard') }}">
-            {{ config('app.name', 'Admin Panel') }}
+            {{ config('app.name', 'Garage Bill') }}
         </a>
 
         <button class="icon-btn" type="button" data-sidebar-toggle aria-label="Toggle sidebar">

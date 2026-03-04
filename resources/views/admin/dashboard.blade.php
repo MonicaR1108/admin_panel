@@ -26,7 +26,7 @@
                         </div>
                         <div class="text-end">
                             <div class="text-muted small">Total</div>
-                            <div class="fs-4 fw-bold">{{ $itemsCount }}</div>
+                            <div class="fs-4 fw-bold" data-counter>{{ $itemsCount }}</div>
                         </div>
                     </div>
                 </div>
@@ -47,7 +47,7 @@
                         </div>
                         <div class="text-end">
                             <div class="text-muted small">Users</div>
-                            <div class="fs-4 fw-bold">{{ $totalApplicationUsers }}</div>
+                            <div class="fs-4 fw-bold" data-counter>{{ $totalApplicationUsers }}</div>
                         </div>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
                     <div class="stat-top">
                         <div>
                             <div class="stat-label">Total Application Users</div>
-                            <div class="stat-value">{{ $totalApplicationUsers }}</div>
+                            <div class="stat-value" data-counter>{{ $totalApplicationUsers }}</div>
                         </div>
                         <div class="stat-icon" aria-hidden="true"><i class="bi bi-people"></i></div>
                     </div>
@@ -76,7 +76,7 @@
                     <div class="stat-top">
                         <div>
                             <div class="stat-label">Today's Active Users</div>
-                            <div class="stat-value">{{ $todaysActiveUsers }}</div>
+                            <div class="stat-value" data-counter>{{ $todaysActiveUsers }}</div>
                         </div>
                         <div class="stat-icon" aria-hidden="true"><i class="bi bi-activity"></i></div>
                     </div>
@@ -90,7 +90,7 @@
                     <div class="stat-top">
                         <div>
                             <div class="stat-label">Devices Today (Mobile)</div>
-                            <div class="stat-value">{{ $deviceSummary['Mobile'] ?? 0 }}</div>
+                            <div class="stat-value" data-counter>{{ $deviceSummary['Mobile'] ?? 0 }}</div>
                         </div>
                         <div class="stat-icon" aria-hidden="true"><i class="bi bi-phone"></i></div>
                     </div>
@@ -104,7 +104,7 @@
                     <div class="stat-top">
                         <div>
                             <div class="stat-label">Devices Today (Desktop)</div>
-                            <div class="stat-value">{{ $deviceSummary['Desktop'] ?? 0 }}</div>
+                            <div class="stat-value" data-counter>{{ $deviceSummary['Desktop'] ?? 0 }}</div>
                         </div>
                         <div class="stat-icon" aria-hidden="true"><i class="bi bi-pc-display"></i></div>
                     </div>
@@ -118,7 +118,7 @@
                     <div class="stat-top">
                         <div>
                             <div class="stat-label">Total Master Items</div>
-                            <div class="stat-value">{{ $itemsCount }}</div>
+                            <div class="stat-value" data-counter>{{ $itemsCount }}</div>
                         </div>
                         <div class="stat-icon" aria-hidden="true"><i class="bi bi-box-seam"></i></div>
                     </div>
@@ -132,7 +132,7 @@
                     <div class="stat-top">
                         <div>
                             <div class="stat-label">Admin Accounts</div>
-                            <div class="stat-value">{{ $adminsCount }}</div>
+                            <div class="stat-value" data-counter>{{ $adminsCount }}</div>
                         </div>
                         <div class="stat-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></div>
                     </div>

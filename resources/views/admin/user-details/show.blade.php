@@ -57,10 +57,6 @@
                     <div class="text-muted small">Created Date</div>
                     <div class="fw-semibold">@dmy($user->created_on)</div>
                 </div>
-                <div class="col-12 col-lg-6">
-                    <div class="text-muted small">Created By</div>
-                    <div class="fw-semibold">{{ $user->created_by }}</div>
-                </div>
             </div>
         </div>
     </div>

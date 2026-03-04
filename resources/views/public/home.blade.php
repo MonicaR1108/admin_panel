@@ -10,7 +10,10 @@
     <div class="container py-5">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <h1 class="h4 mb-0">{{ config('app.name', 'Application') }}</h1>
-            <a class="btn btn-outline-primary btn-sm" href="{{ route('login') }}">Admin Login</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-success btn-sm" href="{{ route('public.password.request') }}">Forgot Password</a>
+                <a class="btn btn-outline-primary btn-sm" href="{{ route('login') }}">Admin Login</a>
+            </div>
         </div>
 
         @if (session('status'))
@@ -45,4 +48,3 @@
     </div>
 </body>
 </html>
-
