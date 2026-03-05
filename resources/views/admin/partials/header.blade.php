@@ -4,7 +4,7 @@
 
 <header class="admin-topbar" aria-label="Top bar">
     <div class="topbar-left">
-        <img class="topbar-logo" src="{{ asset('assets/garage-bill-logo.svg') }}" alt="Company Logo">
+        <img class="topbar-logo" src="{{ asset('assets/logo_netautocare1.png') }}?v={{ @filemtime(public_path('assets/logo_netautocare1.png')) }}" alt="Company Logo">
 
         <a class="topbar-title" href="{{ route('dashboard') }}">
             {{ config('app.name', 'Garage Bill') }}

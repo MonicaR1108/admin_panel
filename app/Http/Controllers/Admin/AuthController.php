@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -24,6 +25,8 @@ class AuthController extends Controller
             'identifier' => ['required', 'string', 'max:190'],
             'password' => ['required', 'string', 'max:190'],
         ]);
+
+        $remember = $request->boolean('remember') && Schema::hasColumn('admins', 'remember_token');
 
         $identifier = Str::lower(trim($validated['identifier']));
         $throttleKey = 'admin-login|'.$request->ip().'|'.$identifier;
@@ -49,7 +52,7 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttleKey);
 
-        Auth::guard('admin')->login($admin);
+        Auth::guard('admin')->login($admin, $remember);
         $request->session()->regenerate();
 
         return redirect()->route('dashboard');

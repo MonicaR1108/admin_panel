@@ -17,7 +17,7 @@
                 </a>
                 <a class="btn {{ ($verifiedFilter ?? 'all') === 'pending' ? 'btn-success' : 'btn-outline-success' }}"
                     href="{{ route('admin.user-details.index', ['verified' => 'pending']) }}">
-                    Pending OTP
+                    Pending Verification
                 </a>
             </div>
         </div>
@@ -45,6 +45,9 @@
                     </thead>
                     <tbody>
                         @forelse ($users as $user)
+                            @php
+                                $isVerified = ((string) $user->verified === 'true') || (!empty($user->email_verified_at));
+                            @endphp
                             <tr>
                                 <td class="ps-4 text-center">{{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}</td>
                                 <td class="fw-semibold">{{ $user->name }}</td>
@@ -52,10 +55,10 @@
                                 <td>{{ $user->email }}</td>
                                 <td class="font-monospace">{{ $user->mobile }}</td>
                                 <td>
-                                    @if ((string) $user->verified === 'true')
-                                        <span class="badge text-bg-success">verified</span>
+                                    @if ($isVerified)
+                                        <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Verified</span>
                                     @else
-                                        <span class="badge text-bg-warning">pending</span>
+                                        <span class="badge text-bg-secondary"><i class="bi bi-x-circle me-1"></i>Not Verified</span>
                                     @endif
                                 </td>
                                 <td>
@@ -66,7 +69,7 @@
                                 <td class="text-muted">@dmy($user->created_on)</td>
                                 <td class="pe-4 text-center">
                                     <div class="d-inline-flex align-items-center gap-2">
-                                        @if ((string) $user->verified === 'true')
+                                        @if ($isVerified)
                                             <a class="action-btn action-view" href="{{ route('admin.user-details.show', $user) }}" title="View">
                                                 <i class="bi bi-eye"></i>
                                             </a>
@@ -77,9 +80,12 @@
                                                 <i class="bi bi-key"></i>
                                             </a>
                                         @else
-                                            <a class="action-btn action-edit" href="{{ route('admin.user-details.verify-otp.form', $user) }}" title="Verify OTP">
-                                                <i class="bi bi-shield-check"></i>
-                                            </a>
+                                            <form method="POST" action="{{ route('admin.user-details.resend-verification-link', $user) }}" class="d-inline">
+                                                @csrf
+                                                <button class="action-btn action-edit" type="submit" title="Resend verification link" aria-label="Resend verification link">
+                                                    <i class="bi bi-envelope"></i>
+                                                </button>
+                                            </form>
                                         @endif
                                         <form method="POST" action="{{ route('admin.user-details.destroy', $user) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?')">
                                             @csrf

@@ -1,50 +1,73 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Application') }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <div class="container py-5">
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <h1 class="h4 mb-0">{{ config('app.name', 'Application') }}</h1>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-success btn-sm" href="{{ route('public.password.request') }}">Forgot Password</a>
-                <a class="btn btn-outline-primary btn-sm" href="{{ route('login') }}">Admin Login</a>
-            </div>
-        </div>
+@extends('public.layouts.app')
 
-        @if (session('status'))
-            <div class="alert alert-success">{{ session('status') }}</div>
-        @endif
+@section('title', 'Garage Bill')
 
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4">
-                <p class="text-muted mb-3">
-                    Public users can access this application without entering the admin panel.
-                    Your visits are tracked automatically.
-                </p>
+@section('content')
+    <style>
+        .admin-content .py-3.py-lg-4{
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
 
-                <div class="mb-3">
-                    <div class="text-muted small">Your ID</div>
-                    <div class="fw-semibold">{{ $publicUserName ?? $publicGuestId ?? 'Guest' }}</div>
-                </div>
+        .public-home-wrap{
+            height: calc(100vh - var(--topbar-height));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-                <form method="POST" action="{{ route('public.set-name') }}" class="row g-2">
-                    @csrf
-                    <div class="col-md-8">
-                        <label class="form-label">User Name (optional)</label>
-                        <input type="text" name="user_name" class="form-control" placeholder="Enter your name">
-                        <div class="form-text">Leave empty to use a guest ID.</div>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button class="btn btn-primary w-100" type="submit">Save</button>
-                    </div>
-                </form>
+        .public-home-card{
+            max-width: 520px;
+            width: 100%;
+            border-radius: 22px;
+            border: 1px solid rgba(0,0,0,.06);
+            box-shadow: 0 18px 50px rgba(0,0,0,.10);
+            background: #fff;
+            padding: 22px 18px;
+        }
+
+        .public-home-logo{
+            width: min(260px, 92%);
+            height: auto;
+            object-fit: contain;
+        }
+
+        .public-home-title{
+            font-weight: 900;
+            letter-spacing: .4px;
+            color: #0f3d2e;
+            margin-top: 14px;
+        }
+
+        .public-home-login-btn{
+            padding: 14px 28px;
+            font-weight: 800;
+            border-radius: 16px;
+            box-shadow: 0 14px 30px rgba(25,135,84,.25);
+            transition: transform .14s ease, box-shadow .18s ease, filter .18s ease;
+        }
+
+        .public-home-login-btn:hover{
+            transform: translateY(-2px);
+            box-shadow: 0 18px 42px rgba(25,135,84,.30);
+            filter: brightness(1.02);
+        }
+
+        .public-home-login-btn:active{
+            transform: translateY(0);
+        }
+    </style>
+
+    <div class="public-home-wrap">
+        <div class="public-home-card text-center">
+            <img class="public-home-logo" src="{{ asset('assets/logo_netautocare1.png') }}" alt="Garage Bill">
+
+            <div class="mt-4">
+                <a class="btn btn-success btn-lg public-home-login-btn" href="{{ route('login') }}">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Admin Login
+                </a>
             </div>
         </div>
     </div>
-</body>
-</html>
+@endsection

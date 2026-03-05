@@ -9,24 +9,56 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use App\Mail\UserOtpMail;
+use App\Mail\PublicUserVerificationMail;
 use App\Mail\AdminUserPasswordResetMail;
-use Illuminate\Support\Carbon;
 
 class UserDetailsController extends Controller
 {
+    private function buildVerificationUrl(Request $request, PublicUser $user, \Illuminate\Support\Carbon $expiresAt): string
+    {
+        $rootUrl = (string) config('app.url', '');
+        if ($rootUrl === '') {
+            $rootUrl = $request->getSchemeAndHttpHost();
+        }
+
+        $url = url();
+        $url->forceRootUrl($rootUrl);
+        $url->forceScheme((string) (parse_url($rootUrl, PHP_URL_SCHEME) ?: $request->getScheme()));
+
+        try {
+            return $url->temporarySignedRoute('public.user.verify', $expiresAt, [
+                'user' => $user->getKey(),
+                'hash' => sha1((string) $user->email),
+            ]);
+        } finally {
+            $url->forceRootUrl(null);
+            $url->forceScheme(null);
+        }
+    }
+
     public function index(Request $request)
     {
         $verifiedFilter = (string) $request->query('verified', 'all'); // all|verified|pending
 
         $query = PublicUser::query();
 
+        $hasEmailVerifiedAt = Schema::hasColumn('users', 'email_verified_at');
+
         if ($verifiedFilter === 'verified') {
-            $query->where('verified', 'true');
+            $query->where(function ($q) use ($hasEmailVerifiedAt) {
+                $q->where('verified', 'true');
+                if ($hasEmailVerifiedAt) {
+                    $q->orWhereNotNull('email_verified_at');
+                }
+            });
         } elseif ($verifiedFilter === 'pending') {
-            $query->where(function ($q) {
+            $query->where(function ($q) use ($hasEmailVerifiedAt) {
                 $q->whereNull('verified')->orWhere('verified', '!=', 'true');
+                if ($hasEmailVerifiedAt) {
+                    $q->whereNull('email_verified_at');
+                }
             });
         }
 
@@ -59,22 +91,22 @@ class UserDetailsController extends Controller
         $admin = Auth::guard('admin')->user();
         $adminId = (string) ($admin?->id ?? '');
         $now = now();
-        $otp = random_int(100000, 999999);
-        $otpExpiry = $now->copy()->addMinutes(10)->format('Y-m-d H:i:s');
 
         $user = PublicUser::query()->create([
             'name' => trim($validated['full_name']),
             'email' => strtolower(trim($validated['email'])),
+            ...(Schema::hasColumn('users', 'email_verified_at') ? ['email_verified_at' => null] : []),
             'mobile' => trim($validated['mobile']),
             'address' => trim((string) ($validated['address'] ?? '')),
             'BusinessName' => trim($validated['business_name']),
             'username' => trim($validated['username']),
             'password' => Hash::make($validated['password']),
-            // Keep accounts inactive until OTP is verified.
+            // Keep accounts inactive until the user verifies by email.
             'status' => 'inactive',
+            ...(Schema::hasColumn('users', 'pending_status') ? ['pending_status' => $intendedStatus] : []),
             // Columns required by existing `whyceffy_netautocare.users` table definition:
-            'otp' => $otp,
-            'otp_expiry' => $otpExpiry,
+            'otp' => null,
+            'otp_expiry' => '',
             'verified' => 'false',
             'access_token' => Str::random(180),
             'access_token_expiry' => $now->copy()->addDays(30)->format('Y-m-d H:i:s'),
@@ -86,11 +118,12 @@ class UserDetailsController extends Controller
             'updated_by' => $adminId,
         ]);
 
-        $request->session()->put('pending_user_status.' . $user->getKey(), $intendedStatus);
-
         try {
-            Mail::to($user->email)->send(new UserOtpMail($otp, $otpExpiry, $user->name));
-            Log::info('OTP email sent.', [
+            $expiresAt = $now->copy()->addMinutes(60);
+            $verificationUrl = $this->buildVerificationUrl($request, $user, $expiresAt);
+
+            Mail::to($user->email)->send(new PublicUserVerificationMail($verificationUrl, $expiresAt->format('Y-m-d H:i:s'), (string) $user->name));
+            Log::info('Verification link email sent.', [
                 'to' => $user->email,
                 'user_id' => $user->getKey(),
                 'mailer' => (string) config('mail.default', ''),
@@ -98,93 +131,63 @@ class UserDetailsController extends Controller
         } catch (\Throwable $e) {
             report($e);
             $user->delete();
-            $request->session()->forget('pending_user_status.' . $user->getKey());
 
             return back()
                 ->withInput()
-                ->withErrors(['email' => 'Unable to send OTP email. Please check SMTP settings (Gmail requires an App Password) and try again.']);
+                ->withErrors(['email' => 'Unable to send verification email. Please check SMTP settings (Gmail requires an App Password) and try again.']);
         }
 
         return redirect()
-            ->route('admin.user-details.verify-otp.form', $user)
-            ->with('status', $this->otpStatusMessage());
+            ->route('admin.user-details.index')
+            ->with('status', $this->verificationStatusMessage());
     }
 
-    private function otpStatusMessage(): string
+    private function verificationStatusMessage(): string
     {
         $mailer = (string) config('mail.default', 'log');
 
         if (in_array($mailer, ['log', 'array'], true)) {
-            return 'OTP generated. Mail is configured as "' . $mailer . '" (not sent to inbox). Check storage/logs/laravel.log and then verify OTP.';
+            return 'Verification link generated. Mail is configured as "' . $mailer . '" (not sent to inbox). Check storage/logs/laravel.log to copy the link.';
         }
 
-        return 'OTP sent to the user email. Verify OTP to create the profile.';
+        return 'Verification link sent to the user email. The profile will be created after the user clicks the link.';
     }
 
-    public function verifyOtpForm(PublicUser $user)
+    public function resendVerificationLink(Request $request, PublicUser $user)
     {
         if ((string) $user->verified === 'true') {
             return redirect()->route('admin.user-details.index')->with('status', 'User already verified.');
         }
 
-        return view('admin.user-details.verify-otp', [
+        try {
+            $expiresAt = now()->addMinutes(60);
+            $verificationUrl = $this->buildVerificationUrl($request, $user, $expiresAt);
+
+            Mail::to($user->email)->send(new PublicUserVerificationMail($verificationUrl, $expiresAt->format('Y-m-d H:i:s'), (string) $user->name));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['email' => 'Unable to send verification email. Please check SMTP settings and try again.']);
+        }
+
+        return back()->with('status', $this->verificationStatusMessage());
+    }
+
+    public function pendingVerification(PublicUser $user)
+    {
+        if ((string) $user->verified === 'true') {
+            return redirect()->route('admin.user-details.show', $user);
+        }
+
+        return view('admin.user-details.pending-verification', [
             'user' => $user,
         ]);
-    }
-
-    public function verifyOtp(Request $request, PublicUser $user)
-    {
-        if ((string) $user->verified === 'true') {
-            return redirect()->route('admin.user-details.index')->with('status', 'User already verified.');
-        }
-
-        $validated = $request->validate([
-            'otp' => ['required', 'digits:6'],
-        ]);
-
-        $expiresAt = (string) ($user->otp_expiry ?? '');
-        $isExpired = false;
-        if ($expiresAt !== '') {
-            try {
-                $isExpired = now()->greaterThan(Carbon::parse($expiresAt));
-            } catch (\Throwable) {
-                $isExpired = true;
-            }
-        }
-
-        if ($isExpired) {
-            return back()->withErrors(['otp' => 'OTP has expired. Please create the user again.']);
-        }
-
-        if ((string) $user->otp !== (string) $validated['otp']) {
-            return back()->withErrors(['otp' => 'Invalid OTP.']);
-        }
-
-        $admin = Auth::guard('admin')->user();
-        $adminId = (string) ($admin?->id ?? '');
-        $now = now();
-
-        $intendedStatus = (string) $request->session()->pull('pending_user_status.' . $user->getKey(), '');
-        if (! in_array($intendedStatus, ['active', 'inactive'], true)) {
-            $intendedStatus = '';
-        }
-
-        $user->update([
-            'verified' => 'true',
-            'otp' => null,
-            'otp_expiry' => '',
-            ...( $intendedStatus !== '' ? ['status' => $intendedStatus] : [] ),
-            'updated_on' => $now->format('Y-m-d H:i:s'),
-            'updated_by' => $adminId,
-        ]);
-
-        return redirect()->route('admin.user-details.index')->with('status', 'User verified and created successfully.');
     }
 
     public function show(PublicUser $user)
     {
         if ((string) $user->verified !== 'true') {
-            return redirect()->route('admin.user-details.verify-otp.form', $user);
+            return redirect()->route('admin.user-details.pending-verification', $user);
         }
 
         return view('admin.user-details.show', [
@@ -195,7 +198,7 @@ class UserDetailsController extends Controller
     public function edit(PublicUser $user)
     {
         if ((string) $user->verified !== 'true') {
-            return redirect()->route('admin.user-details.verify-otp.form', $user);
+            return redirect()->route('admin.user-details.pending-verification', $user);
         }
 
         return view('admin.user-details.edit', [
@@ -206,7 +209,7 @@ class UserDetailsController extends Controller
     public function update(Request $request, PublicUser $user)
     {
         if ((string) $user->verified !== 'true') {
-            return redirect()->route('admin.user-details.verify-otp.form', $user);
+            return redirect()->route('admin.user-details.pending-verification', $user);
         }
 
         $validated = $request->validate([

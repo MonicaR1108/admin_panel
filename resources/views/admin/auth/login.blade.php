@@ -3,24 +3,36 @@
 @section('title', 'Admin Login')
 
 @section('content')
-    <div class="auth-page">
-        <div class="container flex-grow-1 d-flex align-items-center py-4">
-            <div class="row w-100 align-items-center g-4 g-lg-5">
-                <div class="col-12 col-lg-6">
-                    <div class="auth-brand">
-                        <img class="auth-logo" src="{{ asset('assets/garage-bill-logo.svg') }}" alt="Garage Bill">
-                        <div>
-                            <div class="auth-brand-name">Garage Bill</div>
-                        </div>
-                    </div>
-                </div>
+    <div class="auth-page admin-login-page">
+        <div class="login-shell">
+            <div class="container-fluid px-3 px-lg-5">
+                <div class="login-grid">
+                    <section class="login-left" aria-label="Overview">
+                        <div class="login-hero">
+                            <img
+                                class="login-brand-logo"
+                                src="{{ asset('assets/logo_netautocare1.png') }}?v={{ @filemtime(public_path('assets/logo_netautocare1.png')) }}"
+                                alt="Garage Bill"
+                            >
 
-                <div class="col-12 col-lg-5 offset-lg-1">
-                    <div class="card auth-card mt-lg-3">
-                        <div class="card-body p-4 p-lg-5">
+                            <h1 class="login-hero-title">
+                                Streamline your garage's billing<br>
+                                and operations.
+                            </h1>
+                        </div>
+                    </section>
+
+                    <section class="login-right" aria-label="Admin login">
+                        <div class="login-card">
+                            <div class="login-card-top">
+                                <a class="btn btn-outline-secondary btn-sm login-back-btn" href="{{ route('public.home') }}" data-no-loader>
+                                    <i class="bi bi-arrow-left me-1"></i>Back to Home
+                                </a>
+                            </div>
+
                             <div class="text-center mb-4">
-                                <div class="fw-bold fs-4">Welcome</div>
-                                <div class="text-muted">Login to your account</div>
+                                <div class="fw-bold fs-4">Welcome back!</div>
+                                <div class="text-muted">Log in to your admin account.</div>
                             </div>
 
                             <form method="POST" action="{{ route('admin.login') }}" novalidate>
@@ -44,35 +56,79 @@
                                     @enderror
                                 </div>
 
-                                <div class="mb-4 auth-input">
+                                <div class="mb-3 auth-input">
                                     <label class="form-label">Password</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-lock"></i></span>
                                         <input
+                                            id="password"
                                             type="password"
                                             name="password"
                                             class="form-control @error('password') is-invalid @enderror"
                                             autocomplete="current-password"
                                             required
                                         >
+                                        <button
+                                            id="togglePassword"
+                                            class="input-group-text password-toggle"
+                                            type="button"
+                                            aria-label="Show password"
+                                            aria-pressed="false"
+                                        >
+                                            <i class="bi bi-eye"></i>
+                                        </button>
                                     </div>
                                     @error('password')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
 
-                                <button class="btn btn-success w-100 py-2" type="submit">
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            name="remember"
+                                            id="remember"
+                                            {{ old('remember') ? 'checked' : '' }}
+                                        >
+                                        <label class="form-check-label" for="remember">Remember me</label>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-success w-100 py-2 login-submit" type="submit">
                                     <i class="bi bi-box-arrow-in-right me-2"></i>Login
                                 </button>
                             </form>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
         </div>
 
-        <div class="auth-footer text-center pb-3">
-            Copyright &copy; {{ date('Y') }} Garage Bill.
-        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('password');
+            const toggleButton = document.getElementById('togglePassword');
+            const toggleIcon = toggleButton?.querySelector('i');
+
+            if (!passwordInput || !toggleButton || !toggleIcon) return;
+
+            const setVisible = (visible) => {
+                passwordInput.type = visible ? 'text' : 'password';
+                toggleIcon.classList.toggle('bi-eye', !visible);
+                toggleIcon.classList.toggle('bi-eye-slash', visible);
+                toggleButton.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+                toggleButton.setAttribute('aria-pressed', visible ? 'true' : 'false');
+            };
+
+            setVisible(false);
+
+            toggleButton.addEventListener('click', () => {
+                setVisible(passwordInput.type === 'password');
+            });
+        });
+    </script>
 @endsection

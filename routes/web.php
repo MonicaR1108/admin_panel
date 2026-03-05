@@ -6,8 +6,13 @@ use App\Http\Controllers\Admin\MasterItemController;
 use App\Http\Controllers\Admin\UserDetailsController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\PublicPasswordResetController;
+use App\Http\Controllers\PublicUserVerificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/verify-user/{user}/{hash}', [PublicUserVerificationController::class, 'verify'])
+    ->middleware(['throttle:6,1'])
+    ->name('public.user.verify');
 
 Route::middleware('track.public')->group(function () {
     Route::get('/', [PublicController::class, 'home'])->name('public.home');
@@ -56,8 +61,13 @@ Route::prefix('admin')->group(function () {
         Route::get('/user-details', [UserDetailsController::class, 'index'])->name('admin.user-details.index');
         Route::get('/user-details/create', [UserDetailsController::class, 'create'])->name('admin.user-details.create');
         Route::post('/user-details', [UserDetailsController::class, 'store'])->name('admin.user-details.store');
-        Route::get('/user-details/{user}/verify-otp', [UserDetailsController::class, 'verifyOtpForm'])->name('admin.user-details.verify-otp.form');
-        Route::post('/user-details/{user}/verify-otp', [UserDetailsController::class, 'verifyOtp'])->name('admin.user-details.verify-otp');
+        Route::get('/user-details/{user}/pending-verification', [UserDetailsController::class, 'pendingVerification'])->name('admin.user-details.pending-verification');
+        Route::post('/user-details/{user}/resend-verification-link', [UserDetailsController::class, 'resendVerificationLink'])->name('admin.user-details.resend-verification-link');
+        // Backward-compatible routes (OTP verification was replaced by email verification link).
+        Route::get('/user-details/{user}/verify-otp', fn () => redirect()->route('admin.user-details.index')->with('status', 'OTP verification has been replaced by email verification link.'))
+            ->name('admin.user-details.verify-otp.form');
+        Route::post('/user-details/{user}/verify-otp', fn () => redirect()->route('admin.user-details.index')->with('status', 'OTP verification has been replaced by email verification link.'))
+            ->name('admin.user-details.verify-otp');
         Route::get('/user-details/{user}', [UserDetailsController::class, 'show'])->name('admin.user-details.show');
         Route::get('/user-details/{user}/edit', [UserDetailsController::class, 'edit'])->name('admin.user-details.edit');
         Route::put('/user-details/{user}', [UserDetailsController::class, 'update'])->name('admin.user-details.update');
