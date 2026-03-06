@@ -28,10 +28,13 @@ class UserDetailsController extends Controller
         $url->forceScheme((string) (parse_url($rootUrl, PHP_URL_SCHEME) ?: $request->getScheme()));
 
         try {
-            return $url->temporarySignedRoute('public.user.verify', $expiresAt, [
+            // Sign the *relative* URL so signature stays valid even if host/scheme changes.
+            $relativeSigned = $url->temporarySignedRoute('public.user.verify', $expiresAt, [
                 'user' => $user->getKey(),
                 'hash' => sha1((string) $user->email),
-            ]);
+            ], false);
+
+            return rtrim($rootUrl, '/') . '/' . ltrim($relativeSigned, '/');
         } finally {
             $url->forceRootUrl(null);
             $url->forceScheme(null);
@@ -78,11 +81,9 @@ class UserDetailsController extends Controller
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:190'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
-            'mobile' => ['required', 'string', 'max:30'],
+            'mobile' => ['nullable', 'string', 'max:30'],
             'business_name' => ['required', 'string', 'max:190'],
             'address' => ['nullable', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:190', 'unique:users,username'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'status' => ['required', 'in:active,inactive'],
         ]);
 
@@ -96,12 +97,13 @@ class UserDetailsController extends Controller
             'name' => trim($validated['full_name']),
             'email' => strtolower(trim($validated['email'])),
             ...(Schema::hasColumn('users', 'email_verified_at') ? ['email_verified_at' => null] : []),
-            'mobile' => trim($validated['mobile']),
+            'mobile' => trim((string) ($validated['mobile'] ?? '')),
             'address' => trim((string) ($validated['address'] ?? '')),
             'BusinessName' => trim($validated['business_name']),
-            'username' => trim($validated['username']),
-            'password' => Hash::make($validated['password']),
-            // Keep accounts inactive until the user verifies by email.
+            'username' => null,
+            // Placeholder password until the user verifies and creates their own password.
+            'password' => Hash::make(Str::random(48)),
+            // Keep account inactive until user verifies + sets password.
             'status' => 'inactive',
             ...(Schema::hasColumn('users', 'pending_status') ? ['pending_status' => $intendedStatus] : []),
             // Columns required by existing `whyceffy_netautocare.users` table definition:
@@ -130,11 +132,15 @@ class UserDetailsController extends Controller
             ]);
         } catch (\Throwable $e) {
             report($e);
-            $user->delete();
+
+            $message = 'Unable to send verification email. Please check SMTP settings (Gmail requires an App Password) and try again.';
+            if ((bool) config('app.debug')) {
+                $message .= ' Error: ' . $e->getMessage();
+            }
 
             return back()
                 ->withInput()
-                ->withErrors(['email' => 'Unable to send verification email. Please check SMTP settings (Gmail requires an App Password) and try again.']);
+                ->withErrors(['email' => $message]);
         }
 
         return redirect()
@@ -150,7 +156,7 @@ class UserDetailsController extends Controller
             return 'Verification link generated. Mail is configured as "' . $mailer . '" (not sent to inbox). Check storage/logs/laravel.log to copy the link.';
         }
 
-        return 'Verification link sent to the user email. The profile will be created after the user clicks the link.';
+        return 'Verification link sent to the user email. The account stays pending until the user verifies and creates a password.';
     }
 
     public function resendVerificationLink(Request $request, PublicUser $user)
@@ -167,7 +173,12 @@ class UserDetailsController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->withErrors(['email' => 'Unable to send verification email. Please check SMTP settings and try again.']);
+            $message = 'Unable to send verification email. Please check SMTP settings and try again.';
+            if ((bool) config('app.debug')) {
+                $message .= ' Error: ' . $e->getMessage();
+            }
+
+            return back()->withErrors(['email' => $message]);
         }
 
         return back()->with('status', $this->verificationStatusMessage());
@@ -215,11 +226,10 @@ class UserDetailsController extends Controller
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:190'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email,' . $user->getKey() . ',ID'],
-            'mobile' => ['required', 'string', 'max:30'],
+            'mobile' => ['nullable', 'string', 'max:30'],
             'business_name' => ['required', 'string', 'max:190'],
             'address' => ['nullable', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:190', 'unique:users,username,' . $user->getKey() . ',ID'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'username' => ['nullable', 'string', 'max:190', 'unique:users,username,' . $user->getKey() . ',ID'],
             'status' => ['required', 'in:active,inactive'],
         ]);
 
@@ -227,21 +237,20 @@ class UserDetailsController extends Controller
         $adminId = (string) ($admin?->id ?? '');
         $now = now();
 
+        $username = trim((string) ($validated['username'] ?? ''));
+        $username = $username === '' ? null : $username;
+
         $updates = [
             'name' => trim($validated['full_name']),
             'email' => strtolower(trim($validated['email'])),
-            'mobile' => trim($validated['mobile']),
+            'mobile' => trim((string) ($validated['mobile'] ?? '')),
             'address' => trim((string) ($validated['address'] ?? '')),
             'BusinessName' => trim($validated['business_name']),
-            'username' => trim($validated['username']),
+            'username' => $username,
             'status' => $validated['status'],
             'updated_on' => $now->format('Y-m-d H:i:s'),
             'updated_by' => $adminId,
         ];
-
-        if (! empty($validated['password'])) {
-            $updates['password'] = Hash::make($validated['password']);
-        }
 
         $user->update($updates);
 

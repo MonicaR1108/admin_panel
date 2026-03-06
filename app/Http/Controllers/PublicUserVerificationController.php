@@ -23,7 +23,9 @@ class PublicUserVerificationController extends Controller
             'app_url' => (string) config('app.url', ''),
         ]);
 
-        if (! URL::hasValidSignature($request, true, $ignoreQuery)) {
+        // Use relative signature validation to avoid failures caused by host/scheme changes
+        // (common with reverse proxies, http↔https redirects, or APP_URL mismatch).
+        if (! URL::hasValidSignature($request, false, $ignoreQuery)) {
             Log::warning('Public user verification invalid signature.', [
                 'full_url' => $request->fullUrl(),
                 'user_id' => $user->getKey(),
@@ -39,12 +41,24 @@ class PublicUserVerificationController extends Controller
             abort(403);
         }
 
+        $requiresPasswordSetup = Schema::hasColumn('users', 'pending_status') && ! empty($user->pending_status);
+
         if ((string) $user->verified === 'true') {
+            if ($requiresPasswordSetup) {
+                $request->session()->put('password_setup_user_id', $user->getKey());
+
+                return redirect()
+                    ->route('public.home')
+                    ->with('status', 'Your email is verified. Please create your password to activate your account.');
+            }
+
             return view('public.auth.verify-user', [
                 'status' => 'Your account is already verified.',
                 'statusType' => 'success',
             ]);
         }
+
+        $now = now()->format('Y-m-d H:i:s');
 
         $pendingStatus = 'active';
         if (Schema::hasColumn('users', 'pending_status')) {
@@ -54,27 +68,30 @@ class PublicUserVerificationController extends Controller
             }
         }
 
-        $now = now()->format('Y-m-d H:i:s');
-
         $updates = [
             'verified' => 'true',
             ...(Schema::hasColumn('users', 'email_verified_at') ? ['email_verified_at' => $now] : []),
             'otp' => null,
             'otp_expiry' => '',
-            'status' => $pendingStatus,
+            // If the account still requires password setup, keep it inactive.
+            'status' => $requiresPasswordSetup ? 'inactive' : $pendingStatus,
             'updated_on' => $now,
             'updated_by' => (string) ($user->created_by ?? $user->updated_by ?? ''),
         ];
-
-        if (Schema::hasColumn('users', 'pending_status')) {
-            $updates['pending_status'] = null;
-        }
 
         $user->update($updates);
 
         Log::info('Public user verified successfully.', [
             'user_id' => $user->getKey(),
         ]);
+
+        if ($requiresPasswordSetup) {
+            $request->session()->put('password_setup_user_id', $user->getKey());
+
+            return redirect()
+                ->route('public.home')
+                ->with('status', 'Your account is verified. Please create your password to activate your account.');
+        }
 
         return view('public.auth.verify-user', [
             'status' => 'Your account has been successfully verified.',

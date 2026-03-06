@@ -25,7 +25,7 @@
             </div>
 
             <p class="text-muted mb-4">
-                The user profile will be created after the user clicks the verification link in their email.
+                The account is created and is currently pending. The user must click the verification link and then create a password to activate the account.
                 You can resend the verification link if needed.
             </p>
 
@@ -46,4 +46,3 @@
         </div>
     </div>
 @endsection
-

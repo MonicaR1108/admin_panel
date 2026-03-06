@@ -14,5 +14,10 @@
             <i class="bi bi-people"></i>
             <span class="label">User Details</span>
         </a>
+
+        <a class="sidebar-link {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}" href="{{ route('admin.transactions.index') }}">
+            <i class="bi bi-receipt"></i>
+            <span class="label">Transactions</span>
+        </a>
     </nav>
 </aside>

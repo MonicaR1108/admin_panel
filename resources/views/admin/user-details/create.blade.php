@@ -29,8 +29,8 @@
                     </div>
 
                     <div class="col-12 col-lg-6">
-                        <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
-                        <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control @error('mobile') is-invalid @enderror" required>
+                        <label class="form-label">Mobile Number</label>
+                        <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control @error('mobile') is-invalid @enderror" placeholder="Optional">
                         @error('mobile')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
@@ -47,29 +47,19 @@
                     </div>
 
                     <div class="col-12 col-lg-6">
-                        <label class="form-label">Username <span class="text-danger">*</span></label>
-                        <input type="text" name="username" value="{{ old('username') }}" class="form-control @error('username') is-invalid @enderror" required>
-                        @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="col-12 col-lg-6">
                         <label class="form-label">Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-select @error('status') is-invalid @enderror" required>
                             <option value="active" @selected(old('status', 'active') === 'active')>Active</option>
                             <option value="inactive" @selected(old('status') === 'inactive')>Inactive</option>
                         </select>
                         @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Applied after the user verifies and creates a password.</div>
                     </div>
 
-                    <div class="col-12 col-lg-6">
-                        <label class="form-label">Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                        @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password_confirmation" class="form-control" required>
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            After you save, the system emails the user a verification link. Once verified, the user will create their own password and the account becomes active.
+                        </div>
                     </div>
                 </div>
 

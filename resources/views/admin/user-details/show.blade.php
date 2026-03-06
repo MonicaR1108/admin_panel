@@ -28,9 +28,18 @@
                 <div class="col-12 col-lg-6">
                     <div class="text-muted small">Status</div>
                     <div>
-                        <span class="badge {{ $user->status === 'active' ? 'text-bg-success' : 'text-bg-secondary' }}">
-                            {{ $user->status }}
-                        </span>
+                        @php
+                            $isPending = !empty($user->pending_status) && ((string) ($user->verified ?? '')) !== 'true' && empty($user->email_verified_at);
+                            $status = strtolower((string) ($user->status ?? ''));
+                            $statusLabel = $isPending ? 'Pending' : ($status === '' ? '-' : ucfirst($status));
+                            $statusBadge = $isPending
+                                ? 'text-bg-warning'
+                                : match ($status) {
+                                    'active' => 'text-bg-success',
+                                    default => 'text-bg-secondary',
+                                };
+                        @endphp
+                        <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
@@ -44,10 +53,6 @@
                 <div class="col-12 col-lg-6">
                     <div class="text-muted small">Business Name</div>
                     <div class="fw-semibold">{{ $user->BusinessName }}</div>
-                </div>
-                <div class="col-12 col-lg-6">
-                    <div class="text-muted small">Username</div>
-                    <div class="fw-semibold">{{ $user->username }}</div>
                 </div>
                 <div class="col-12">
                     <div class="text-muted small">Address</div>

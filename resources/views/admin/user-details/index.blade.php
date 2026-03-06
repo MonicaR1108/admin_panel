@@ -62,9 +62,18 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge {{ $user->status === 'active' ? 'text-bg-success' : 'text-bg-secondary' }}">
-                                        {{ $user->status }}
-                                    </span>
+                                    @php
+                                        $isPending = !empty($user->pending_status) && ((string) ($user->verified ?? '')) !== 'true' && empty($user->email_verified_at);
+                                        $status = strtolower((string) ($user->status ?? ''));
+                                        $statusLabel = $isPending ? 'Pending' : ($status === '' ? '-' : ucfirst($status));
+                                        $statusBadge = $isPending
+                                            ? 'text-bg-warning'
+                                            : match ($status) {
+                                                'active' => 'text-bg-success',
+                                                default => 'text-bg-secondary',
+                                            };
+                                    @endphp
+                                    <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
                                 </td>
                                 <td class="text-muted">@dmy($user->created_on)</td>
                                 <td class="pe-4 text-center">

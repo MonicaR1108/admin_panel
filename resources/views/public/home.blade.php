@@ -63,11 +63,33 @@
         <div class="public-home-card text-center">
             <img class="public-home-logo" src="{{ asset('assets/logo_netautocare1.png') }}" alt="Garage Bill">
 
-            <div class="mt-4">
-                <a class="btn btn-success btn-lg public-home-login-btn" href="{{ route('login') }}">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Admin Login
-                </a>
-            </div>
+            @if (session()->has('password_setup_user_id'))
+                <div class="public-home-title fs-5">Create your password</div>
+                <div class="text-muted small mt-1">Your email is verified. Set a password to activate your account.</div>
+
+                <form class="text-start mt-4" method="POST" action="{{ route('public.password.setup') }}" novalidate>
+                    @csrf
+
+                    <div class="mb-3">
+                        <label class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+                        @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password_confirmation" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 public-home-login-btn">
+                        <i class="bi bi-check2-circle me-2"></i>Set Password & Activate
+                    </button>
+                </form>
+            @else
+                <div class="mt-4 text-muted">
+                    Welcome to Garage Bill.
+                </div>
+            @endif
         </div>
     </div>
 @endsection

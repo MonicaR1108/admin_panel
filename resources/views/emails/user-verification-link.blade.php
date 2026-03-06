@@ -23,6 +23,12 @@
                 </a>
             </p>
 
+            <p style="margin:0 0 14px; color:#6b7280; font-size:13px;">
+                If the button doesn't work, copy and paste this link into your browser:
+                <br>
+                <span style="word-break:break-all;">{{ $verificationUrl }}</span>
+            </p>
+
             <p style="margin:12px 0 0; color:#6b7280; font-size:13px;">
                 If you did not request this, you can ignore this email.
             </p>

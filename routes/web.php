@@ -3,8 +3,10 @@
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MasterItemController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserDetailsController;
 use App\Http\Controllers\PublicController;
+use App\Http\Controllers\PublicPasswordSetupController;
 use App\Http\Controllers\PublicPasswordResetController;
 use App\Http\Controllers\PublicUserVerificationController;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +19,7 @@ Route::get('/verify-user/{user}/{hash}', [PublicUserVerificationController::clas
 Route::middleware('track.public')->group(function () {
     Route::get('/', [PublicController::class, 'home'])->name('public.home');
     Route::post('/set-name', [PublicController::class, 'setName'])->name('public.set-name');
+    Route::post('/create-password', [PublicPasswordSetupController::class, 'store'])->name('public.password.setup');
 
     Route::get('/forgot-password', [PublicPasswordResetController::class, 'requestForm'])->name('public.password.request');
     Route::post('/forgot-password', [PublicPasswordResetController::class, 'sendResetLink'])->name('public.password.email');
@@ -74,5 +77,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/user-details/{user}/reset-password', [UserDetailsController::class, 'resetPasswordForm'])->name('admin.user-details.reset-password.form');
         Route::post('/user-details/{user}/reset-password', [UserDetailsController::class, 'resetPassword'])->name('admin.user-details.reset-password');
         Route::delete('/user-details/{user}', [UserDetailsController::class, 'destroy'])->name('admin.user-details.destroy');
+
+        Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
     });
 });

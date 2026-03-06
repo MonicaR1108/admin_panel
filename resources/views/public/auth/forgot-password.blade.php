@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Forgot Password - {{ config('app.name', 'Application') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ asset('assets/admin.css') }}?v={{ @filemtime(public_path('assets/admin.css')) }}" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="admin-body">
     <div class="container py-5">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <h1 class="h5 mb-0">Forgot Password</h1>
@@ -38,4 +40,3 @@
     </div>
 </body>
 </html>
-

@@ -38,8 +38,8 @@
                     </div>
 
                     <div class="col-12 col-lg-6">
-                        <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
-                        <input type="text" name="mobile" value="{{ old('mobile', $user->mobile) }}" class="form-control @error('mobile') is-invalid @enderror" required>
+                        <label class="form-label">Mobile Number</label>
+                        <input type="text" name="mobile" value="{{ old('mobile', $user->mobile) }}" class="form-control @error('mobile') is-invalid @enderror" placeholder="Optional">
                         @error('mobile')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
@@ -56,8 +56,8 @@
                     </div>
 
                     <div class="col-12 col-lg-6">
-                        <label class="form-label">Username <span class="text-danger">*</span></label>
-                        <input type="text" name="username" value="{{ old('username', $user->username) }}" class="form-control @error('username') is-invalid @enderror" required>
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" value="{{ old('username', $user->username) }}" class="form-control @error('username') is-invalid @enderror" placeholder="Optional">
                         @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
@@ -68,17 +68,6 @@
                             <option value="inactive" @selected(old('status', $user->status) === 'inactive')>Inactive</option>
                         </select>
                         @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label class="form-label">New Password</label>
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Leave blank to keep current password">
-                        @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label class="form-label">Confirm New Password</label>
-                        <input type="password" name="password_confirmation" class="form-control" placeholder="Re-enter new password">
                     </div>
                 </div>
 

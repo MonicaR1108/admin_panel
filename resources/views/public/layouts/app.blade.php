@@ -6,7 +6,7 @@
     <title>@yield('title', 'Garage Bill')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="{{ asset('assets/admin.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/admin.css') }}?v={{ @filemtime(public_path('assets/admin.css')) }}" rel="stylesheet">
 </head>
 <body class="admin-body">
     <div class="admin-shell">
@@ -43,4 +43,3 @@
     <script src="{{ asset('assets/admin.js') }}"></script>
 </body>
 </html>
-
