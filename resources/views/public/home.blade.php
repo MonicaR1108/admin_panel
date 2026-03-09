@@ -89,6 +89,12 @@
                 <div class="mt-4 text-muted">
                     Welcome to Garage Bill.
                 </div>
+
+                <div class="mt-4">
+                    <a href="{{ route('login') }}" class="btn btn-outline-success px-4 py-2 fw-semibold rounded-4">
+                        Admin Login
+                    </a>
+                </div>
             @endif
         </div>
     </div>

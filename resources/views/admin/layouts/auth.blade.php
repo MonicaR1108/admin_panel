@@ -194,6 +194,12 @@
             backdrop-filter: blur(8px);
         }
 
+        @media (min-width: 992px){
+            .admin-login-page .login-right{
+                transform: translateX(-16px);
+            }
+        }
+
         .admin-login-page .login-card{
             background: rgba(255,255,255,.62);
             border: 1px solid rgba(0,0,0,.10);
