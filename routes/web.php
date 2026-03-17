@@ -17,7 +17,10 @@ Route::get('/verify-user/{user}/{hash}', [PublicUserVerificationController::clas
     ->name('public.user.verify');
 
 Route::middleware('track.public')->group(function () {
-    Route::get('/', [PublicController::class, 'home'])->name('public.home');
+    // Route::get('/', [PublicController::class, 'home'])->name('public.home');
+    Route::get('/', function () {
+    return redirect('/admin');
+    });
     Route::post('/set-name', [PublicController::class, 'setName'])->name('public.set-name');
     Route::post('/create-password', [PublicPasswordSetupController::class, 'store'])->name('public.password.setup');
 

@@ -22,8 +22,8 @@ Admin-only web application built with Laravel + MySQL.
 
 4. Open:
 
-   - Public app: `http://localhost/admin_panel/public/`
-   - Admin login: `http://localhost/admin_panel/public/admin/login`
+   - Public app: `http://localhost/admin_panel/`
+   - Admin login: `http://localhost/admin_panel/admin/login`
 
 ## Default Admin (change after first login)
 
