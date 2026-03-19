@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/whyceffy/public_html/netautocare-web/
+    - /bin/rsync -av --delete --exclude=".git" ./ $DEPLOYPATH
