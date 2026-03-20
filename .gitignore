@@ -26,3 +26,5 @@ Thumbs.db
 .htaccess
 /index.php
 /assets
+/public/index.php
+/public/.htaccess
