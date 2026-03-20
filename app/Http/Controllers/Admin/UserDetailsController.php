@@ -78,14 +78,22 @@ class UserDetailsController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $hasUsername = Schema::hasColumn('users', 'username');
+
+        $rules = [
             'full_name' => ['required', 'string', 'max:190'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'mobile' => ['nullable', 'string', 'max:30'],
             'business_name' => ['required', 'string', 'max:190'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
-        ]);
+        ];
+
+        if ($hasUsername) {
+            $rules['username'] = ['nullable', 'string', 'max:190', 'unique:users,username'];
+        }
+
+        $validated = $request->validate($rules);
 
         $intendedStatus = (string) $validated['status'];
 
@@ -100,7 +108,7 @@ class UserDetailsController extends Controller
             'mobile' => trim((string) ($validated['mobile'] ?? '')),
             'address' => trim((string) ($validated['address'] ?? '')),
             'BusinessName' => trim($validated['business_name']),
-            'username' => null,
+            ...($hasUsername ? ['username' => null] : []),
             // Placeholder password until the user verifies and creates their own password.
             'password' => Hash::make(Str::random(48)),
             // Keep account inactive until user verifies + sets password.
@@ -223,22 +231,32 @@ class UserDetailsController extends Controller
             return redirect()->route('admin.user-details.pending-verification', $user);
         }
 
-        $validated = $request->validate([
+        $hasUsername = Schema::hasColumn('users', 'username');
+
+        $rules = [
             'full_name' => ['required', 'string', 'max:190'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email,' . $user->getKey() . ',ID'],
             'mobile' => ['nullable', 'string', 'max:30'],
             'business_name' => ['required', 'string', 'max:190'],
             'address' => ['nullable', 'string', 'max:255'],
-            'username' => ['nullable', 'string', 'max:190', 'unique:users,username,' . $user->getKey() . ',ID'],
             'status' => ['required', 'in:active,inactive'],
-        ]);
+        ];
+
+        if ($hasUsername) {
+            $rules['username'] = ['nullable', 'string', 'max:190', 'unique:users,username,' . $user->getKey() . ',ID'];
+        }
+
+        $validated = $request->validate($rules);
 
         $admin = Auth::guard('admin')->user();
         $adminId = (string) ($admin?->id ?? '');
         $now = now();
 
-        $username = trim((string) ($validated['username'] ?? ''));
-        $username = $username === '' ? null : $username;
+        $username = null;
+        if ($hasUsername) {
+            $username = trim((string) ($validated['username'] ?? ''));
+            $username = $username === '' ? null : $username;
+        }
 
         $updates = [
             'name' => trim($validated['full_name']),
@@ -246,11 +264,14 @@ class UserDetailsController extends Controller
             'mobile' => trim((string) ($validated['mobile'] ?? '')),
             'address' => trim((string) ($validated['address'] ?? '')),
             'BusinessName' => trim($validated['business_name']),
-            'username' => $username,
             'status' => $validated['status'],
             'updated_on' => $now->format('Y-m-d H:i:s'),
             'updated_by' => $adminId,
         ];
+
+        if ($hasUsername) {
+            $updates['username'] = $username;
+        }
 
         $user->update($updates);
 
