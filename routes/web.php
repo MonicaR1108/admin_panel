@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MasterItemController;
+use App\Http\Controllers\Admin\AdminPasswordResetController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserDetailsController;
 use App\Http\Controllers\PublicController;
@@ -40,6 +41,10 @@ Route::prefix('admin')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AuthController::class, 'create'])->name('login');
         Route::post('/login', [AuthController::class, 'store'])->name('admin.login');
+        Route::get('/forgot-password', [AdminPasswordResetController::class, 'requestForm'])->name('admin.password.request');
+        Route::post('/forgot-password', [AdminPasswordResetController::class, 'sendResetLink'])->name('admin.password.email');
+        Route::get('/reset-password/{token}', [AdminPasswordResetController::class, 'resetForm'])->name('admin.password.reset.form');
+        Route::post('/reset-password', [AdminPasswordResetController::class, 'resetPassword'])->name('admin.password.reset');
     });
 
     Route::middleware('auth:admin')->group(function () {

@@ -35,6 +35,10 @@
                                 <div class="text-muted">Log in to your admin account.</div>
                             </div>
 
+                            @if (session('status'))
+                                <div class="alert alert-success">{{ session('status') }}</div>
+                            @endif
+
                             <form method="POST" action="{{ route('admin.login') }}" novalidate>
                                 @csrf
 
@@ -43,11 +47,11 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                                         <input
-                                            type="text"
+                                            type="email"
                                             name="identifier"
                                             value="{{ old('identifier') }}"
                                             class="form-control @error('identifier') is-invalid @enderror"
-                                            autocomplete="username"
+                                            autocomplete="email"
                                             required
                                         >
                                     </div>
@@ -94,6 +98,7 @@
                                         >
                                         <label class="form-check-label" for="remember">Remember me</label>
                                     </div>
+                                    <a class="text-decoration-none" href="{{ route('admin.password.request') }}">Forgot password?</a>
                                 </div>
 
                                 <button class="btn btn-success w-100 py-2 login-submit" type="submit">

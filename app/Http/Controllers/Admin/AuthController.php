@@ -22,7 +22,7 @@ class AuthController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'identifier' => ['required', 'string', 'max:190'],
+            'identifier' => ['required', 'string', 'email', 'max:190'],
             'password' => ['required', 'string', 'max:190'],
         ]);
 
@@ -38,8 +38,7 @@ class AuthController extends Controller
         }
 
         $admin = Admin::query()
-            ->where('username', $identifier)
-            ->orWhere('email', $identifier)
+            ->where('email', $identifier)
             ->first();
 
         if (! $admin || ! Hash::check($validated['password'], (string) $admin->password)) {
