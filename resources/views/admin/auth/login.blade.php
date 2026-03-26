@@ -24,14 +24,8 @@
 
                     <section class="login-right" aria-label="Admin login">
                         <div class="login-card">
-                            <div class="login-card-top">
-                                <a class="btn btn-outline-secondary btn-sm login-back-btn" href="/admin" data-no-loader>
-                                    <i class="bi bi-arrow-left me-1"></i>Back to Home
-                                </a>
-                            </div>
-
                             <div class="text-center mb-4">
-                                <div class="fw-bold fs-4">Welcome back!</div>
+                                <div class="fw-bold fs-4">Welcome</div>
                                 <div class="text-muted">Log in to your admin account.</div>
                             </div>
 
