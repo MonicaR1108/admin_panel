@@ -17,7 +17,7 @@
 
                             <h1 class="login-hero-title">
                                 Streamline your garage's billing<br>
-                                and operations.
+                                <!-- and operations. -->
                             </h1>
                         </div>
                     </section>
